@@ -512,6 +512,7 @@ class Weibo(object):
 
             s = requests.Session()
             s.mount(url, HTTPAdapter(max_retries=5))
+            url = url.replace('large', 'oslarge')
             try_count = 0
             success = False
             MAX_TRY_COUNT = 3
@@ -1341,9 +1342,16 @@ class Weibo(object):
     def write_csv(self, wrote_count):
         """将爬到的信息写入csv文件"""
         write_info = self.get_write_info(wrote_count)
+
         result_headers = self.get_result_headers()
         result_data = [w.values() for w in write_info]
         file_path = self.get_filepath("csv")
+        file_path_json = self.get_filepath("json")
+        with open(file_path_json, 'w', encoding='utf-8') as f:
+            # 使用 json.dump 方法将列表写入文件
+            # ensure_ascii=False 用于确保非 ASCII 字符的正确写入
+            # indent 参数用于格式化输出，使得 JSON 文件易于阅读
+            json.dump(write_info, f, ensure_ascii=False, indent=4)
         self.csv_helper(result_headers, result_data, file_path)
 
     def csv_helper(self, headers, result_data, file_path):
