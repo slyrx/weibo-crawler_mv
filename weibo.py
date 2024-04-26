@@ -446,7 +446,8 @@ class Weibo(object):
         if weibo_info.get("pics"):
             pic_info = weibo_info["pics"]
             pic_list = [pic["large"]["url"] for pic in pic_info]
-            pics = ",".join(pic_list)
+            # pics = ",".join(pic_list)
+            pics = pic_list
         else:
             pics = ""
         return pics
@@ -587,9 +588,10 @@ class Weibo(object):
     def handle_download(self, file_type, file_dir, urls, w):
         """处理下载相关操作"""
         file_prefix = w["created_at"][:11].replace("-", "") + "_" + str(w["id"])
+        urls_str = ','.join(urls)
         if file_type == "img":
-            if "," in urls:
-                url_list = urls.split(",")
+            if "," in urls_str:
+                url_list = urls_str.split(",")
                 for i, url in enumerate(url_list):
                     index = url.rfind(".")
                     if len(url) - index >= 5:
@@ -600,30 +602,31 @@ class Weibo(object):
                     file_path = file_dir + os.sep + file_name
                     self.download_one_file(url, file_path, file_type, w["id"])
             else:
-                index = urls.rfind(".")
-                if len(urls) - index > 5:
+                index = urls_str.rfind(".")
+                if len(urls_str) - index > 5:
                     file_suffix = ".jpg"
                 else:
-                    file_suffix = urls[index:]
+                    file_suffix = urls_str[index:]
                 file_name = file_prefix + file_suffix
                 file_path = file_dir + os.sep + file_name
-                self.download_one_file(urls, file_path, file_type, w["id"])
+                self.download_one_file(urls_str, file_path, file_type, w["id"])
         else:
-            file_suffix = ".mp4"
-            if ";" in urls:
-                url_list = urls.split(";")
-                if url_list[0].endswith(".mov"):
-                    file_suffix = ".mov"
-                for i, url in enumerate(url_list):
-                    file_name = file_prefix + "_" + str(i + 1) + file_suffix
-                    file_path = file_dir + os.sep + file_name
-                    self.download_one_file(url, file_path, file_type, w["id"])
-            else:
-                if urls.endswith(".mov"):
-                    file_suffix = ".mov"
-                file_name = file_prefix + file_suffix
-                file_path = file_dir + os.sep + file_name
-                self.download_one_file(urls, file_path, file_type, w["id"])
+            # file_suffix = ".mp4"
+            # if ";" in urls:
+            #     url_list = urls.split(";")
+            #     if url_list[0].endswith(".mov"):
+            #         file_suffix = ".mov"
+            #     for i, url in enumerate(url_list):
+            #         file_name = file_prefix + "_" + str(i + 1) + file_suffix
+            #         file_path = file_dir + os.sep + file_name
+            #         self.download_one_file(url, file_path, file_type, w["id"])
+            # else:
+            #     if urls.endswith(".mov"):
+            #         file_suffix = ".mov"
+            #     file_name = file_prefix + file_suffix
+            #     file_path = file_dir + os.sep + file_name
+            #     self.download_one_file(urls, file_path, file_type, w["id"])
+            pass
 
     def download_files(self, file_type, weibo_type, wrote_count):
         """下载文件(图片/视频)"""
@@ -765,6 +768,8 @@ class Weibo(object):
             weibo["screen_name"] = ""
         weibo["id"] = int(weibo_info["id"])
         weibo["bid"] = weibo_info["bid"]
+        weibo["user_uid"] = self.user["id"]
+        weibo["user_name"] = self.user["screen_name"]
         text_body = weibo_info["text"]
         selector = etree.HTML(f"{text_body}<hr>" if text_body.isspace() else text_body)
         if self.remove_html_tag:
@@ -785,7 +790,8 @@ class Weibo(object):
         weibo["location"] = self.get_location(selector)
         weibo["created_at"] = weibo_info["created_at"]
         weibo["source"] = weibo_info["source"]
-        weibo["attitudes_count"] = self.string_to_int(
+        weibo["url"] = weibo_info.get("url", "")
+        weibo["likes_count"] = self.string_to_int(
             weibo_info.get("attitudes_count", 0)
         )
         weibo["comments_count"] = self.string_to_int(
@@ -852,6 +858,7 @@ class Weibo(object):
         """获取一条微博的全部信息"""
         try:
             weibo_info = info["mblog"]
+            weibo_info["url"] = info["scheme"]
             weibo_id = weibo_info["id"]
             retweeted_status = weibo_info.get("retweeted_status")
             is_long = (
@@ -1274,7 +1281,7 @@ class Weibo(object):
                     if "unicode" in str(type(v)):
                         v = v.encode("utf-8")
                     if k == "id":
-                        v = str(v) + "\t"
+                        v = str(v) # + "\t"
                     wb[k] = v
             if not self.only_crawl_original:
                 if w.get("retweet"):
@@ -1283,7 +1290,7 @@ class Weibo(object):
                         if "unicode" in str(type(v2)):
                             v2 = v2.encode("utf-8")
                         if k2 == "id":
-                            v2 = str(v2) + "\t"
+                            v2 = str(v2)  # + "\t"
                         wb["retweet_" + k2] = v2
                 else:
                     wb["is_original"] = True
